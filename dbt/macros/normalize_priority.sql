@@ -45,25 +45,20 @@
 #}
 
 {% macro normalize_priority(col) %}
-    -- TODO(nhiệm vụ 3): thay biểu thức dưới đây bằng một khối CASE xử lý
-    -- đủ ba nhóm ở trên.
-    --
-    --     case
-    --         when <nhóm 1: đã là số hợp lệ>  then <giữ nguyên>
-    --         when <nhóm 2: nhãn chữ>         then <số tương ứng>
-    --         ...
-    --         else null                        -- nhóm 3
-    --     end
-    try_cast({{ col }} as integer)
+    case 
+        when try_cast({{ col }} as integer) in (1, 2, 3, 4) then try_cast({{ col }} as integer)
+        when lower({{ col }}) = 'urgent' then 1
+        when lower({{ col }}) = 'high' then 2
+        when lower({{ col }}) = 'medium' then 3
+        when lower({{ col }}) = 'low' then 4
+        else null
+    end
 {% endmacro %}
 
-
-{#
-    Lý do bị loại — để người trực đọc log là hiểu ngay phải làm gì.
-    Bắt đầu bằng một câu chung cũng được; phân biệt được vài loại lỗi thì tốt
-    hơn (rỗng / NULL / là số nhưng ngoài khoảng / là chuỗi lạ).
-#}
 {% macro priority_reject_reason(col) %}
-    -- TODO(nhiệm vụ 3, không bắt buộc): phân biệt các loại lỗi khác nhau.
-    'priority không quy đổi được về 1..4'
+    case 
+        when {{ col }} is null then 'priority is null'
+        when {{ col }} = '' then 'priority is empty'
+        else 'priority is not valid or cannot be mapped to 1..4'
+    end
 {% endmacro %}
